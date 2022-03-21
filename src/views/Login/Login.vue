@@ -1,10 +1,12 @@
 <script setup lang="ts">
 import type { FormInstance } from "element-plus";
-import { ref, reactive } from "vue";
+import { ref, reactive, watch } from "vue";
+import { login, loginTest, register } from "../../api/http";
 import router from "../../router";
+import { storageLocal, storageSession } from "../../utils/storage";
 
 const obj = reactive({ id: "login" });
-
+const loginSucc = ref(false);
 const ruleFormRef = ref<FormInstance>();
 
 const validatePassword = (rule: any, value: any, callback: any) => {
@@ -41,19 +43,51 @@ const submitLoginForm = (formEl: FormInstance | undefined) => {
   if (!formEl) return;
   formEl.validate((valid) => {
     if (valid) {
-      console.log("submit!");
-      router.push("/user");
+      loginSucc.value = true;
+      storageLocal.setItem("username", ruleForm.username);
+      storageLocal.setItem("password", ruleForm.password);
+      sessionStorage.setItem("username", ruleForm.username);
+      sessionStorage.setItem("password", ruleForm.password);
+    } else {
+      console.log("error submit!");
+      formEl.resetFields();
+      return false;
+    }
+  });
+};
+watch(loginSucc, () => {
+  console.log("login : ", loginSucc.value);
+
+  if (loginSucc.value) {
+    router.push("/user");
+  }
+});
+const submitRegisterForm = (formEl: FormInstance | undefined) => {
+  if (!formEl) return;
+  formEl.validate((valid) => {
+    if (valid) {
+      register(
+        {
+          username: ruleForm.username,
+          password: ruleForm.password,
+        },
+        (res: any) => {
+          console.log(res);
+          if (res.data === false) {
+            formEl.resetFields();
+          }
+        },
+        (err: any) => {
+          console.log(err);
+        }
+      );
     } else {
       console.log("error submit!");
       router.push("/login");
       return false;
     }
   });
-};
-
-const submitRegisterForm = (formEl: FormInstance | undefined) => {
-  if (!formEl) return;
-  formEl.resetFields();
+  // formEl.resetFields();
 };
 </script>
 
